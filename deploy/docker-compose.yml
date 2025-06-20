@@ -34,8 +34,8 @@ services:
     env_file:
       - .env
     # Se quiser acessar o pgadmin via Nginx, adicione a porta. Ex:
-    # ports:
-    #   - "127.0.0.1:5050:80" # A porta interna do pgadmin é 80
+    ports:
+      - "127.0.0.1:5050:80" # A porta interna do pgadmin é 80
     restart: unless-stopped
 
   result_backend:
@@ -70,8 +70,8 @@ services:
       - FLOWER_PORT=5555
     command: /bin/sh -c "python -m celery -A langflow.worker.celery_app --broker=${BROKER_URL?Variable not set} flower --port=5555"
     # Se quiser acessar o Flower via Nginx, adicione a porta. Ex:
-    # ports:
-    #   - "127.0.0.1:5555:5555"
+    ports:
+      - "127.0.0.1:5555:5555"
     restart: unless-stopped
 
   frontend:
@@ -81,7 +81,7 @@ services:
     # Adicionamos a porta para que o Nginx possa acessar o frontend.
     # A porta 8080 do host será mapeada para a porta 80 do contêiner.
     ports:
-      - "127.0.0.1:8080:80" # Expondo apenas para o localhost por segurança
+      - "127.0.0.1:8081:80" # Expondo apenas para o localhost por segurança
     restart: unless-stopped
 
   broker:
@@ -95,8 +95,8 @@ services:
     # As portas 5672 (AMQP) e 15672 (management) não precisam ser expostas publicamente,
     # a menos que você queira acessar o painel de gerenciamento do RabbitMQ via Nginx.
     # Se quiser, descomente a linha abaixo e configure no Nginx:
-    # ports:
-    #   - "127.0.0.1:15672:15672"
+    ports:
+      - "127.0.0.1:15672:15672"
     restart: unless-stopped
 
   # Os serviços prometheus e grafana foram removidos das labels do traefik.
@@ -119,6 +119,8 @@ services:
       - .env
     volumes:
       - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
 
 volumes:
