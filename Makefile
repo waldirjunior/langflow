@@ -80,10 +80,7 @@ init: check_tools ## initialize the project
 	@make install_frontend
 	@uvx pre-commit install
 	@echo "$(GREEN)All requirements are installed.$(NC)"
-<<<<<<< feature/deploy-vps
 	@uv run langflow run --env-file .env
-=======
->>>>>>> main
 
 ######################
 # CLEAN PROJECT
