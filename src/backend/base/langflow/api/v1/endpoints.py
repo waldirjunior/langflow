@@ -488,7 +488,7 @@ async def _run_flow_internal(
 async def simplified_run_flow(
     *,
     background_tasks: BackgroundTasks,
-    flow: Annotated[FlowRead | None, Depends(get_flow_by_id_or_endpoint_name)],
+    flow: Annotated[FlowRead, Depends(get_flow_by_id_or_endpoint_name)],
     input_request: SimplifiedAPIRequest | None = None,
     stream: bool = False,
     api_key_user: Annotated[UserRead, Depends(api_key_security)],
@@ -546,7 +546,7 @@ async def simplified_run_flow(
 async def simplified_run_flow_session(
     *,
     background_tasks: BackgroundTasks,
-    flow: Annotated[FlowRead | None, Depends(get_flow_by_id_or_endpoint_name)],
+    flow: Annotated[FlowRead, Depends(get_flow_by_id_or_endpoint_name)],
     input_request: SimplifiedAPIRequest | None = None,
     stream: bool = False,
     api_key_user: CurrentActiveUser,
@@ -588,7 +588,15 @@ async def simplified_run_flow_session(
             - "token": Individual tokens during streaming
             - "end": Final execution result
         - Authentication: Requires active session (cookies)
+        - Feature Flag: Only available when agentic_experience is enabled
     """
+    # Feature flag: Only allow access if agentic_experience is enabled
+    if not get_settings_service().settings.agentic_experience:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This endpoint is not available",
+        )
+
     return await _run_flow_internal(
         background_tasks=background_tasks,
         flow=flow,
@@ -953,9 +961,11 @@ async def custom_component_update(
         raise SerializationError.from_exception(exc, data=component_node) from exc
 
 
-@router.get("/config")
+@router.get("/config", dependencies=[Depends(get_current_active_user)])
 async def get_config() -> ConfigResponse:
     """Retrieve the current application configuration settings.
+
+    Requires authentication to prevent exposure of sensitive configuration details.
 
     Returns:
         ConfigResponse: The configuration settings of the application.

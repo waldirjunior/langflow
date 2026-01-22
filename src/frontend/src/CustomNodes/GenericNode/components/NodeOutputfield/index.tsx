@@ -27,6 +27,7 @@ import {
   scapedJSONStringfy,
   scapeJSONParse,
 } from "../../../../utils/reactflowUtils";
+import { nodeColorsName } from "../../../../utils/styleUtils";
 import {
   cn,
   logFirstMessage,
@@ -34,7 +35,6 @@ import {
   logTypeIsError,
   logTypeIsUnknown,
 } from "../../../../utils/utils";
-import { nodeColorsName } from "../../../../utils/styleUtils";
 import HandleRenderComponent from "../handleRenderComponent";
 import OutputComponent from "../OutputComponent";
 import OutputModal from "../outputModal";
@@ -48,9 +48,8 @@ const _EyeIcon = memo(
     />
   ),
 );
-
 const SnowflakeIcon = memo(() => (
-  <IconComponent className="h-5 w-5 text-ice" name="Snowflake" />
+  <IconComponent className="!w-3 !h-3 text-ice" name="Snowflake" />
 ));
 
 const InspectButton = memo(
@@ -112,6 +111,7 @@ function NodeOutputField({
   data,
   title,
   id,
+  loopInputId,
   colors,
   tooltipTitle,
   showNode,
@@ -298,7 +298,7 @@ function NodeOutputField({
         <HandleRenderComponent
           left={true}
           tooltipTitle={tooltipTitle}
-          id={id}
+          id={loopInputId}
           title={title}
           nodeId={data.id}
           myData={myData}
@@ -312,7 +312,7 @@ function NodeOutputField({
     }
   }, [
     tooltipTitle,
-    id,
+    loopInputId,
     title,
     data.id,
     myData,
@@ -336,7 +336,11 @@ function NodeOutputField({
         setFilterEdge={setFilterEdge}
         showNode={showNode}
         testIdComplement={`${data?.type?.toLowerCase()}-${showNode ? "shownode" : "noshownode"}`}
-        colorName={colorName}
+        colorName={
+          data.node?.outputs?.[index].allows_loop
+            ? loopInputColorName
+            : colorName
+        }
       />
     ),
     [
@@ -350,11 +354,16 @@ function NodeOutputField({
       showNode,
       data?.type,
       colorName,
+      data.node?.outputs?.[index].allows_loop,
+      loopInputColorName,
+      index,
     ],
   );
 
   const disabledInspectButton =
     !displayOutputPreview || unknownOutput || emptyOutput;
+
+  const memoizedType = useMemo(() => type?.split("|") ?? [], [type]);
 
   if (!showHiddenOutputs && hidden) return <></>;
   if (!showNode) return <>{Handle}</>;
@@ -379,7 +388,7 @@ function NodeOutputField({
         </div>
 
         {data.node?.frozen && (
-          <div className="pr-1" data-testid="frozen-icon">
+          <div data-testid="frozen-icon">
             <SnowflakeIcon />
           </div>
         )}
@@ -390,7 +399,7 @@ function NodeOutputField({
               proxy={outputProxy}
               outputs={outputs}
               idx={index}
-              types={type?.split("|") ?? []}
+              types={memoizedType}
               selected={
                 data.node?.outputs![index].selected ??
                 data.node?.outputs![index].types[0] ??
